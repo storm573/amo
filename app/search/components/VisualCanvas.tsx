@@ -318,7 +318,7 @@ export default function VisualCanvas({ content = defaultLandingContent, isLoadin
       </div>
 
       {/* Product Recommendations Section (1/4 height) */}
-      <div className="h-1/4 border-t border-white/20 bg-white/10 backdrop-blur-sm p-4">
+      {/* <div className="h-1/4 border-t border-white/20 bg-white/10 backdrop-blur-sm p-4">
         <div className="max-w-4xl mx-auto h-full">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
@@ -400,7 +400,7 @@ export default function VisualCanvas({ content = defaultLandingContent, isLoadin
             })}
           </div>
         </div>
-      </div>
+      </div> */}
     </div>
   )
 } 

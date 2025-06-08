@@ -60,15 +60,54 @@ export default function VoicePage() {
   const [error, setError] = useState<string | null>(null);
   const [visualContent, setVisualContent] = useState<VisualContent>({
     type: 'image',
-    title: 'Meet Amo, Your Personal Shopping Expert',
-    description: 'Hi! I\'m Amo, and I\'ll help you find the perfect product for your needs. Just start talking and I\'ll guide you through my proven shopping process.',
+    title: 'Meet Amo, Your Personal Shopping Assistant',
+    description: 'Hi! I\'m Amo, your shopping assistant. I can help you find the perfect product for your needs. Just tell me what you\'re shopping for and I\'ll guide you through the process!',
     src: '/buying_landing.png'
   });
   const [showBabyCarSeatsGuide, setShowBabyCarSeatsGuide] = useState(false);
+  const [isLoadingGuide, setIsLoadingGuide] = useState(false);
   const [currentRecommendations, setCurrentRecommendations] = useState<any[]>([]);
+  
+  // Track when baby car seat is mentioned to trigger demo
+  const [carSeatMentioned, setCarSeatMentioned] = useState(false);
+  const [guideTimer, setGuideTimer] = useState<NodeJS.Timeout | null>(null);
 
   // Memoize recommendations to prevent unnecessary re-renders
   const memoizedRecommendations = useMemo(() => currentRecommendations, [currentRecommendations]);
+
+  // Function to detect baby car seat mentions and trigger demo
+  const detectCarSeatMention = useCallback((message: string) => {
+    const lowerMessage = message.toLowerCase();
+    return lowerMessage.includes('car seat') || 
+           lowerMessage.includes('baby seat') ||
+           lowerMessage.includes('infant seat') ||
+           lowerMessage.includes('carseat') ||
+           (lowerMessage.includes('baby') && lowerMessage.includes('seat'));
+  }, []);
+
+  // Function to trigger the car seat guide after delay
+  const triggerCarSeatGuide = useCallback(() => {
+    console.log('Baby car seat mentioned - starting 10 second timer');
+    
+    // Clear any existing timer
+    if (guideTimer) {
+      clearTimeout(guideTimer);
+    }
+    
+    // Set a 10-second timer to show loading, then guide
+    const timer = setTimeout(() => {
+      console.log('10 seconds elapsed - showing loading');
+      setIsLoadingGuide(true);
+      
+      // After 2 seconds of loading, show the guide
+      setTimeout(() => {
+        setShowBabyCarSeatsGuide(true);
+        setIsLoadingGuide(false);
+      }, 2000);
+    }, 10000); // 10 seconds
+    
+    setGuideTimer(timer);
+  }, [guideTimer]);
 
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
@@ -144,9 +183,8 @@ export default function VoicePage() {
   }, []);
 
   const updateVisualContent = useCallback((productInfo: { category: string; title: string; productName: string }) => {
-    // Handle baby car seats specifically
+    // Handle baby car seats specifically - but don't show guide immediately
     if (productInfo.category === 'baby-carseat') {
-      setShowBabyCarSeatsGuide(true);
       // Set car seat specific recommendations
       setCurrentRecommendations([
         {
@@ -177,9 +215,8 @@ export default function VoicePage() {
           matchReason: 'Budget-friendly with key features'
         }
       ]);
+      // Don't automatically show the guide - wait for 5 questions to be answered
       return;
-    } else {
-      setShowBabyCarSeatsGuide(false);
     }
 
     // Set category-specific recommendations
@@ -387,14 +424,22 @@ export default function VoicePage() {
       messages: [...prev.messages, message]
     }));
 
-    // Check if user mentioned a product
+    // Check if baby car seat is mentioned to trigger demo
+    const messageContent = message.content.toLowerCase();
+    if (detectCarSeatMention(message.content) && !carSeatMentioned && !showBabyCarSeatsGuide && !isLoadingGuide) {
+      console.log('Car seat mentioned in message:', message.content);
+      setCarSeatMentioned(true);
+      triggerCarSeatGuide();
+    }
+
+    // Check if user mentioned a product (original logic)
     if (message.role === 'user') {
       const productInfo = detectProductFromMessage(message.content);
       if (productInfo) {
         updateVisualContent(productInfo);
       }
     }
-  }, [detectProductFromMessage, updateVisualContent]);
+  }, [detectProductFromMessage, updateVisualContent, detectCarSeatMention, triggerCarSeatGuide, carSeatMentioned, showBabyCarSeatsGuide, isLoadingGuide]);
 
   const createSession = useCallback(async () => {
     try {
@@ -405,47 +450,50 @@ export default function VoicePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           voice: 'coral',
-          instructions: `You are **Amo**, an experienced yet brand-agnostic shopping advisor who helps people choose the *single best* option for big-ticket or complex purchases (e.g., sectional couch, convertible stroller, espresso machine, gaming laptop, electric bike, DSLR camera, smart mattress, road bike, high-end treadmill, inflatable paddleboard, 4K home projector).
+          instructions: `You are **Amo**, an experienced yet brand-agnostic shopping advisor who helps people choose the best products for their needs. 
 
-Speak in a warm, concise tone. Be opinionated on quality and value, but never biased toward any brand or retailer.
+## Conversation Flow
 
-Follow the six-stage flow below. Advance only when the user's feedback shows they're ready; loop back for clarifications when needed.
+1. **Greet & Scope**
+   
+   Say: "Hi! I'm Amo, your shopping assistant. What are you shopping for today?"
+   
+   Let them tell you what product they're interested in, then dive deeper to understand their needs.
+   
+2. **Ask the First Four Key Questions**
+   
+   Ask them **one at a time**, pausing for the user's answer after each:
+   
+   1. *"When is your baby due—or how big are they now?"*
+   2. *"What car—or cars—will the seat go in most?"*
+   3. *"About what price range feels comfortable?"*
+   4. *"Do you want the seat to click onto a stroller?"*
+   
+   Keep questions conversational and ask one at a time.
+   
+3. **Educate & Guide**
+   
+   Share helpful tips and explain key differences between options.
+   
+   Break down the market into categories that make sense for their product.
+   
+   Avoid long lists; keep explanations bite-sized and relevant.
+   
+4. **Recommend & Discuss**
+   
+   Offer 2-3 top recommendations with brief explanations.
+   
+   Explain trade-offs and help them understand which option fits their specific situation.
+   
+   Ask for their thoughts and clarify any concerns.
+   
+5. **Finalize**
+   
+   Help them make a confident decision.
+   
+   Offer next steps like where to buy or additional tips.
 
-Maintain two silent structures:
-- **Criteria List** – ordered by importance, updated after every user reply.
-- **Scored Product Pool** – each candidate item rated against every criterion; keep the Top-5 in sync.
-
-### **Stage 0 · Greet & Scope**
-- Welcome the user and introduce yourself as Amo, the expert shopping assistant in this category. Confirm if there any hard constraints (budget ceiling, must-have features, delivery deadline).
-- Restate the goal in one sentence.
-
-### **Stage 1 · Diagnose (Understand)**
-1. Internally generate up to **20 diagnostic questions**.
-2. Ask only **3–5 easy, high-leverage questions** first (binary or short answers).
-    - If relevant, ask whether they already own a similar product and what they like/dislike.
-3. Add each answer to the Criteria List (ranked).
-4. Acknowledge what matters most so far in one sentence.
-
-### **Stage 2 · Educate & Frame**
-- Break down the market into **price / quality tiers** and note key brands per tier.
-- Explain the **features that move price or performance**, sprinkling domain tips and "unknown unknowns."
-    - *Example*: "FYI: Car seats expire ~7 years, so second-hand seats may not be worth it."
-- **Invite quick reactions**: "Do you care about convertible seats or is infant-only fine?"
-- Ask which features resonate and suggest the most suitable subcategory or price tier(s) so far.
-
-### **Stage 3 · Initial Recommendations**
-- Present **3–5 top picks**, ranked, each with a one-line rationale tied to the user's criteria.
-- Expose key trade-offs ("Model B folds smaller but lacks suspension").
-- Invite gut reactions—like/dislike, questions, deal-breakers.
-
-### **Stage 4 · Clarify & Iterate**
-- If feedback changes priorities, ask **1–3 targeted follow-ups or other top diagnostic questions**; avoid grilling.
-- Update Criteria List and re-score the pool; refresh the Top-5 list.
-- Drop mini-lessons right when relevant ("Here's why torque matters on hills for e-bikes").
-    
-*(Repeat Stages 2–4 until the user is clearly converging—usually ≤ 2 loops.)*
-
-Remember: You are speaking, so keep responses conversational and not too long. Mention that users can see product visuals on their screen when relevant.`
+Keep responses warm, concise, and conversational for voice interaction. Be helpful but not pushy.`
         })
       });
 
@@ -507,7 +555,50 @@ Remember: You are speaking, so keep responses conversational and not too long. M
            type: 'session.update',
            session: {
              modalities: ['text', 'audio'],
-             instructions: `You are **Amo**, an experienced yet brand-agnostic shopping advisor who helps people choose the *single best* option for big-ticket or complex purchases. Speak in a warm, concise tone. Be opinionated on quality and value, but never biased toward any brand or retailer. Follow your structured shopping advisory process while keeping responses conversational for voice interaction.`,
+             instructions: `You are **Amo**, an experienced yet brand-agnostic shopping advisor who helps people choose the best products for their needs. 
+
+## Conversation Flow
+
+1. **Greet & Scope**
+   
+   Say: "Hi! I'm Amo, your shopping assistant. What are you shopping for today?"
+   
+   Let them tell you what product they're interested in, then dive deeper to understand their needs.
+   
+2. **Ask the First Four Key Questions**
+   
+   Ask them **one at a time**, pausing for the user's answer after each:
+   
+   1. *"When is your baby due—or how big are they now?"*
+   2. *"What car—or cars—will the seat go in most?"*
+   3. *"About what price range feels comfortable?"*
+   4. *"Do you want the seat to click onto a stroller?"*
+   
+   Keep questions conversational and ask one at a time.
+   
+3. **Educate & Guide**
+   
+   Share helpful tips and explain key differences between options.
+   
+   Break down the market into categories that make sense for their product.
+   
+   Avoid long lists; keep explanations bite-sized and relevant.
+   
+4. **Recommend & Discuss**
+   
+   Offer 2-3 top recommendations with brief explanations.
+   
+   Explain trade-offs and help them understand which option fits their specific situation.
+   
+   Ask for their thoughts and clarify any concerns.
+   
+5. **Finalize**
+   
+   Help them make a confident decision.
+   
+   Offer next steps like where to buy or additional tips.
+
+Keep responses warm, concise, and conversational for voice interaction. Be helpful but not pushy.`,
              voice: 'coral',
             input_audio_format: 'pcm16',
             output_audio_format: 'pcm16',
@@ -673,14 +764,29 @@ Remember: You are speaking, so keep responses conversational and not too long. M
      setError(null);
      setIsPaused(false);
      setShowBabyCarSeatsGuide(false);
+     setIsLoadingGuide(false);
+     setCarSeatMentioned(false);
+     if (guideTimer) {
+       clearTimeout(guideTimer);
+       setGuideTimer(null);
+     }
      setCurrentRecommendations([]);
      // Reset visual content to default
      setVisualContent({
        type: 'image',
-       title: 'Meet Amo, Your Personal Shopping Expert',
-       description: 'Hi! I\'m Amo, and I\'ll help you find the perfect product for your needs. Just start talking and I\'ll guide you through my proven shopping process.',
+       title: 'Meet Amo, Your Personal Shopping Assistant',
+       description: 'Hi! I\'m Amo, your shopping assistant. I can help you find the perfect product for your needs. Just tell me what you\'re shopping for and I\'ll guide you through the process!',
        src: '/buying_landing.png'
      });
+   };
+
+   const forceShowCarSeatGuide = () => {
+     console.log('Manually triggering car seat guide demo');
+     setIsLoadingGuide(true);
+     setTimeout(() => {
+       setShowBabyCarSeatsGuide(true);
+       setIsLoadingGuide(false);
+     }, 1000);
    };
 
   const formatTime = (date: Date) => {
@@ -706,6 +812,27 @@ Remember: You are speaking, so keep responses conversational and not too long. M
      }
    };
 
+  // Loading component for baby car seats guide
+  const loadingGuide = useMemo(() => {
+    if (!isLoadingGuide) return null;
+    return (
+      <div className="flex items-center justify-center h-full bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-2">
+            Loading Car Seat Guide Demo
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            Preparing an interactive baby car seat buying guide for you...
+          </p>
+          <div className="mt-4 text-sm text-blue-600 dark:text-blue-400">
+            ✅ Car seat demo triggered: {carSeatMentioned ? 'Yes' : 'Waiting...'}
+          </div>
+        </div>
+      </div>
+    );
+  }, [isLoadingGuide, carSeatMentioned]);
+
   // Memoize the baby car seats guide to prevent re-renders
   const babyCarSeatsGuide = useMemo(() => {
     if (!showBabyCarSeatsGuide) return null;
@@ -714,7 +841,7 @@ Remember: You are speaking, so keep responses conversational and not too long. M
 
   // Memoize visual canvas to prevent re-renders
   const visualCanvas = useMemo(() => {
-    if (showBabyCarSeatsGuide) return null;
+    if (showBabyCarSeatsGuide || isLoadingGuide) return null;
     return (
       <VisualCanvas 
         content={visualContent} 
@@ -722,13 +849,13 @@ Remember: You are speaking, so keep responses conversational and not too long. M
         recommendations={memoizedRecommendations} 
       />
     );
-  }, [showBabyCarSeatsGuide, visualContent, conversation.isLoading, memoizedRecommendations]);
+  }, [showBabyCarSeatsGuide, isLoadingGuide, visualContent, conversation.isLoading, memoizedRecommendations]);
 
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Product Canvas (2/3 width) */}
       <div className="w-2/3 h-full">
-        {showBabyCarSeatsGuide ? babyCarSeatsGuide : visualCanvas}
+        {isLoadingGuide ? loadingGuide : showBabyCarSeatsGuide ? babyCarSeatsGuide : visualCanvas}
       </div>
 
       {/* Voice Interface (1/3 width) */}
@@ -745,12 +872,22 @@ Remember: You are speaking, so keep responses conversational and not too long. M
                 <p className="text-xs text-gray-500">Your shopping expert</p>
               </div>
             </div>
-            <button
-              onClick={startNewConversation}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
-              New Chat
-            </button>
+            <div className="flex space-x-2">
+              {!showBabyCarSeatsGuide && !isLoadingGuide && conversation.messages.length > 4 && (
+                <button
+                  onClick={forceShowCarSeatGuide}
+                  className="text-xs text-green-600 hover:text-green-700 font-medium px-2 py-1 border border-green-300 rounded"
+                >
+                  Demo Guide
+                </button>
+              )}
+              <button
+                onClick={startNewConversation}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                New Chat
+              </button>
+            </div>
           </div>
         </header>
 
@@ -767,6 +904,12 @@ Remember: You are speaking, so keep responses conversational and not too long. M
                {getStatusText()}
              </span>
            </div>
+           {/* Debug: Show demo trigger status */}
+           {carSeatMentioned && (
+             <div className="mt-2 text-xs text-gray-600">
+               Car seat demo: {carSeatMentioned ? 'Triggered' : 'Waiting'} {guideTimer ? '(Timer active)' : ''}
+             </div>
+           )}
          </div>
 
         {/* Error Display */}
