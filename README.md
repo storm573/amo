@@ -1,4 +1,16 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Amo – AI Expert Shopping Assistant
+
+**"Every big purchase, perfectly picked."**
+
+A conversational agent that learns a shopper's context, cuts through option overload, and guides the shopper to find the single best product for big-ticket or complex buys.
+
+## Features
+
+🎤 **Voice-First Shopping Assistant**: Natural conversation with Amo through voice interface
+📊 **Interactive Product Guides**: Visual buying guides with interactive questionnaires  
+🧠 **Smart Product Detection**: Automatically displays relevant guides based on conversation
+💡 **Expert Recommendations**: 6-stage advisory process from diagnosis to final recommendation
+🛒 **Big-Ticket Focus**: Specialized for complex purchases like car seats, laptops, strollers, etc.
 
 ## Getting Started
 
@@ -16,9 +28,26 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Voice Interface
+Navigate to `/voice` to access the voice-powered shopping assistant where you can:
+- Start a voice conversation with Amo
+- Get personalized product recommendations
+- View interactive buying guides
+- Complete shopping questionnaires
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
+
+- `app/voice/page.tsx` - Voice interface with OpenAI Realtime API integration
+- `app/search/data/` - Interactive product buying guides (e.g., baby car seats)
+- `app/search/components/` - Visual components for product displays
+
+## Technology Stack
+
+This project uses:
+- [Next.js](https://nextjs.org) - React framework
+- [OpenAI Realtime API](https://platform.openai.com/docs/guides/realtime) - Voice conversation
+- [TypeScript](https://www.typescriptlang.org/) - Type safety
+- [Tailwind CSS](https://tailwindcss.com/) - Styling
 
 ## Learn More
 

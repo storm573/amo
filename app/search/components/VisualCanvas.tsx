@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Play, Pause, RotateCcw } from 'lucide-react'
+import { Play, Pause, RotateCcw, Star } from 'lucide-react'
 
 interface VisualContent {
   type: 'image' | 'video' | 'comparison' | 'example' | 'search' | 'showcase'
@@ -23,9 +23,21 @@ interface VisualContent {
   }>
 }
 
+interface ProductRecommendation {
+  id: string
+  name: string
+  image: string
+  price: string
+  rating: number
+  keyFeature: string
+  matchReason: string
+  link?: string
+}
+
 interface VisualCanvasProps {
   content?: VisualContent
   isLoading?: boolean
+  recommendations?: ProductRecommendation[]
 }
 
 // Default landing content
@@ -36,9 +48,75 @@ const defaultLandingContent: VisualContent = {
   src: '/buying_landing.png'
 }
 
-export default function VisualCanvas({ content = defaultLandingContent, isLoading = false }: VisualCanvasProps) {
+export default function VisualCanvas({ content = defaultLandingContent, isLoading = false, recommendations }: VisualCanvasProps) {
   const [selectedItem, setSelectedItem] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
+
+  // Default recommendations for demo
+  const defaultRecommendations: ProductRecommendation[] = [
+    {
+      id: '1',
+      name: 'Nuna PIPA RX Infant Car Seat + RELX Base',
+      image: 'https://m.media-amazon.com/images/I/61fMCUlrPWL._SL1500_.jpg',
+      price: '$450',
+      rating: 4.9,
+      keyFeature: 'Best crash test results',
+      matchReason: 'Lightest weight (8.5 lbs) with superior safety',
+      link: 'https://www.bambibaby.com/products/nuna-pipa-rx-infant-car-seat-pipa-relx-base-1?variant=44186731118789'
+    },
+    {
+      id: '2',
+      name: 'Nuna PIPA Aire Infant Car Seat',
+      image: 'https://babyongrand.com/cdn/shop/files/Nuna_PIPAaire_Biscotti_Angle_US_8x8_5779ff4c-035e-4d4a-bdb3-09698829de76.png?v=1729782355&width=1080',
+      price: '$329',
+      rating: 4.8,
+      keyFeature: 'Lightweight & breathable',
+      matchReason: 'Ultra-light design with mesh ventilation',
+      link: 'https://www.bambibaby.com/products/nuna-pipa-aire-infant-car-seat?variant=44152830591173'
+    },
+    {
+      id: '3',
+      name: 'CYBEX Cloud T SensorSafe Infant Car Seat',
+      image: 'https://m.media-amazon.com/images/I/71CpnjTVJDL._SL1500_.jpg',
+      price: '$399',
+      rating: 4.7,
+      keyFeature: 'Smart sensor technology',
+      matchReason: 'Alerts for safety with app connectivity',
+      link: 'https://www.bambibaby.com/products/cybex-cloud-t-sensorsafe-infant-car-seat-sepia-black?variant=44174548926661'
+    },
+    {
+      id: '4',
+      name: 'Evenflo Revolve180 LiteMax NXT Rotational',
+      image: 'https://target.scene7.com/is/image/Target/GUEST_32d45c36-2c25-4209-8e46-8497cfc8f06b',
+      price: '$279',
+      rating: 4.6,
+      keyFeature: '180° rotation',
+      matchReason: 'Easy loading with rotating convenience',
+      link: 'https://www.evenflo.com/products/revolve180-litemax-nxt-gold?variant=44759101964444'
+    },
+    {
+      id: '5',
+      name: 'Graco SnugRide 35 Lite LX Infant Car Seat',
+      image: 'https://orbitbaby.com/cdn/shop/products/ToddlerCarSeat_Merino_Wool_01_19c14ff8-3c87-40af-a2c4-218211707e33.jpg?v=1642116461',
+      price: '$149',
+      rating: 4.5,
+      keyFeature: 'Budget-friendly reliability',
+      matchReason: 'Trusted brand with essential safety features',
+      link: 'https://www.gracobaby.com/car-seats/infant-car-seats/snugride-35-lite-lx-infant-car-seat/'
+    },
+    {
+      id: '6',
+      name: 'Cosco Scenera Next Convertible Car Seat',
+      image: 'https://target.scene7.com/is/image/Target/GUEST_9b599553-a30e-4630-b96a-98723c458245',
+      price: '$59',
+      rating: 4.2,
+      keyFeature: 'Ultra-affordable',
+      matchReason: 'Basic safety at the lowest price point',
+      link: 'https://www.coscocarseats.com/products/scenera-next'
+    }
+  ];
+
+  const displayRecommendations = recommendations || defaultRecommendations;
 
   if (isLoading) {
     return (
@@ -52,8 +130,10 @@ export default function VisualCanvas({ content = defaultLandingContent, isLoadin
   }
 
   return (
-    <div className="h-full bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 p-6 overflow-y-auto">
-      <div className="max-w-4xl mx-auto">
+    <div className="h-full bg-gradient-to-br from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 flex flex-col">
+      {/* Main Content Section (3/4 height) */}
+      <div className="flex-grow h-3/4 p-6 overflow-y-auto">
+        <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-6">
           <h2 className="text-2xl font-bold mb-2">{content.title}</h2>
@@ -234,6 +314,92 @@ export default function VisualCanvas({ content = defaultLandingContent, isLoadin
             </div>
           </div>
         )}
+        </div>
+      </div>
+
+      {/* Product Recommendations Section (1/4 height) */}
+      <div className="h-1/4 border-t border-white/20 bg-white/10 backdrop-blur-sm p-4">
+        <div className="max-w-4xl mx-auto h-full">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+              🎯 Top Recommendations for You
+            </h3>
+            <span className="text-xs text-gray-600 dark:text-gray-400 bg-white/50 px-2 py-1 rounded-full">
+              Based on your conversation
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 h-full max-h-32">
+            {displayRecommendations.slice(0, 3).map((product) => {
+              const CardContent = (
+                <>
+                  <div className="w-16 h-16 bg-gray-200 dark:bg-gray-700 rounded-lg overflow-hidden flex-shrink-0">
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement
+                        target.src = `data:image/svg+xml,${encodeURIComponent(`
+                          <svg width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+                            <rect width="100%" height="100%" fill="#f3f4f6"/>
+                            <text x="50%" y="50%" font-family="Arial" font-size="10" fill="#6b7280" text-anchor="middle" dy=".3em">
+                              Product
+                            </text>
+                          </svg>
+                        `)}`
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">
+                      {product.name}
+                    </h4>
+                    <div className="flex items-center space-x-2 mt-1">
+                      <span className="text-blue-600 dark:text-blue-400 font-semibold text-sm">
+                        {product.price}
+                      </span>
+                      <div className="flex items-center">
+                        <span className="text-yellow-500 text-xs">★</span>
+                        <span className="text-xs text-gray-600 dark:text-gray-400 ml-1">
+                          {product.rating}
+                        </span>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate">
+                      {product.keyFeature}
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-400 font-medium truncate">
+                      {product.matchReason}
+                    </p>
+                    {product.link && (
+                      <p className="text-xs text-blue-500 dark:text-blue-300 mt-1">
+                        View Product →
+                      </p>
+                    )}
+                  </div>
+                </>
+              );
+
+              return product.link ? (
+                <a 
+                  key={product.id}
+                  href={product.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 flex items-center space-x-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer hover:bg-white/90 dark:hover:bg-gray-800/90"
+                >
+                  {CardContent}
+                </a>
+              ) : (
+                <div key={product.id} className="bg-white/80 dark:bg-gray-800/80 rounded-lg p-3 flex items-center space-x-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+                  {CardContent}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   )

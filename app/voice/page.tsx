@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Mic, MessageSquare, AlertCircle, Phone, PhoneOff, Pause, Play } from 'lucide-react';
 import VisualCanvas from '../search/components/VisualCanvas';
@@ -65,6 +65,10 @@ export default function VoicePage() {
     src: '/buying_landing.png'
   });
   const [showBabyCarSeatsGuide, setShowBabyCarSeatsGuide] = useState(false);
+  const [currentRecommendations, setCurrentRecommendations] = useState<any[]>([]);
+
+  // Memoize recommendations to prevent unnecessary re-renders
+  const memoizedRecommendations = useMemo(() => currentRecommendations, [currentRecommendations]);
 
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const dataChannelRef = useRef<RTCDataChannel | null>(null);
@@ -143,10 +147,138 @@ export default function VoicePage() {
     // Handle baby car seats specifically
     if (productInfo.category === 'baby-carseat') {
       setShowBabyCarSeatsGuide(true);
+      // Set car seat specific recommendations
+      setCurrentRecommendations([
+        {
+          id: '1',
+          name: 'Britax B-Safe Ultra Infant Car Seat',
+          image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=200&h=200&fit=crop',
+          price: '$249.99',
+          rating: 4.8,
+          keyFeature: 'Anti-Rebound Bar',
+          matchReason: 'Top safety rating for newborns'
+        },
+        {
+          id: '2',
+          name: 'Chicco KeyFit 30 Infant Car Seat',
+          image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=200&h=200&fit=crop',
+          price: '$179.99',
+          rating: 4.6,
+          keyFeature: 'Easy Installation',
+          matchReason: 'Great value with excellent safety'
+        },
+        {
+          id: '3',
+          name: 'Graco SnugRide SnugLock 35',
+          image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=200&fit=crop',
+          price: '$149.99',
+          rating: 4.4,
+          keyFeature: 'One-Second Install',
+          matchReason: 'Budget-friendly with key features'
+        }
+      ]);
       return;
     } else {
       setShowBabyCarSeatsGuide(false);
     }
+
+    // Set category-specific recommendations
+    const getRecommendations = () => {
+      switch (productInfo.category) {
+        case 'laptop':
+          return [
+            {
+              id: '1',
+              name: 'MacBook Air M2',
+              image: 'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=200&h=200&fit=crop',
+              price: '$1,199',
+              rating: 4.8,
+              keyFeature: 'M2 Chip Performance',
+              matchReason: 'Perfect for productivity'
+            },
+            {
+              id: '2',
+              name: 'Dell XPS 13',
+              image: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?w=200&h=200&fit=crop',
+              price: '$999',
+              rating: 4.6,
+              keyFeature: 'InfinityEdge Display',
+              matchReason: 'Great Windows alternative'
+            },
+            {
+              id: '3',
+              name: 'Lenovo ThinkPad X1',
+              image: 'https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?w=200&h=200&fit=crop',
+              price: '$1,299',
+              rating: 4.7,
+              keyFeature: 'Business Grade Build',
+              matchReason: 'Professional reliability'
+            }
+          ];
+        case 'stroller':
+          return [
+            {
+              id: '1',
+              name: 'UPPAbaby Vista V2',
+              image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=200&h=200&fit=crop',
+              price: '$929',
+              rating: 4.8,
+              keyFeature: 'Expandable Design',
+              matchReason: 'Grows with your family'
+            },
+            {
+              id: '2',
+              name: 'Baby Jogger City Select',
+              image: 'https://images.unsplash.com/photo-1555252333-9f8e92e65df9?w=200&h=200&fit=crop',
+              price: '$499',
+              rating: 4.5,
+              keyFeature: 'Multiple Configurations',
+              matchReason: 'Versatile and reliable'
+            },
+            {
+              id: '3',
+              name: 'Chicco Bravo Quick-Fold',
+              image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=200&h=200&fit=crop',
+              price: '$199',
+              rating: 4.3,
+              keyFeature: 'One-Hand Fold',
+              matchReason: 'Budget-friendly choice'
+            }
+          ];
+        default:
+          return [
+            {
+              id: '1',
+              name: `Best ${productInfo.productName}`,
+              image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop',
+              price: 'From $199',
+              rating: 4.6,
+              keyFeature: 'Top Rated',
+              matchReason: 'Most popular choice'
+            },
+            {
+              id: '2',
+              name: `Premium ${productInfo.productName}`,
+              image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=200&h=200&fit=crop',
+              price: 'From $399',
+              rating: 4.8,
+              keyFeature: 'Premium Quality',
+              matchReason: 'Best performance'
+            },
+            {
+              id: '3',
+              name: `Budget ${productInfo.productName}`,
+              image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=200&h=200&fit=crop',
+              price: 'From $99',
+              rating: 4.2,
+              keyFeature: 'Great Value',
+              matchReason: 'Affordable option'
+            }
+          ];
+      }
+    };
+
+    setCurrentRecommendations(getRecommendations());
 
     // Create category-specific visual content
     const getProductContent = () => {
@@ -541,6 +673,7 @@ Remember: You are speaking, so keep responses conversational and not too long. M
      setError(null);
      setIsPaused(false);
      setShowBabyCarSeatsGuide(false);
+     setCurrentRecommendations([]);
      // Reset visual content to default
      setVisualContent({
        type: 'image',
@@ -573,18 +706,29 @@ Remember: You are speaking, so keep responses conversational and not too long. M
      }
    };
 
+  // Memoize the baby car seats guide to prevent re-renders
+  const babyCarSeatsGuide = useMemo(() => {
+    if (!showBabyCarSeatsGuide) return null;
+    return <BabyCarSeatsBuyingGuide recommendations={memoizedRecommendations} />;
+  }, [showBabyCarSeatsGuide, memoizedRecommendations]);
+
+  // Memoize visual canvas to prevent re-renders
+  const visualCanvas = useMemo(() => {
+    if (showBabyCarSeatsGuide) return null;
+    return (
+      <VisualCanvas 
+        content={visualContent} 
+        isLoading={conversation.isLoading}
+        recommendations={memoizedRecommendations} 
+      />
+    );
+  }, [showBabyCarSeatsGuide, visualContent, conversation.isLoading, memoizedRecommendations]);
+
   return (
     <div className="flex h-screen bg-gray-50">
       {/* Product Canvas (2/3 width) */}
       <div className="w-2/3 h-full">
-        {showBabyCarSeatsGuide ? (
-          <BabyCarSeatsBuyingGuide />
-        ) : (
-          <VisualCanvas 
-            content={visualContent} 
-            isLoading={conversation.isLoading} 
-          />
-        )}
+        {showBabyCarSeatsGuide ? babyCarSeatsGuide : visualCanvas}
       </div>
 
       {/* Voice Interface (1/3 width) */}
